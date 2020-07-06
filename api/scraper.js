@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 
 var songsArray;
 
-var index = 0;
+
 
 module.exports = {
     initialize: () =>{
@@ -20,10 +20,11 @@ module.exports = {
             });
             console.log("page loaded!");
             songsArray = await page.evaluate(() =>{
+                let index1 = 0;
                 let songs = document.getElementsByClassName("list_show_chart")[0].getElementsByTagName("LI");
                 songs = [...songs];
                 let results = songs.map(song => ({
-                    id: index++,
+                    id: index1++,
                     title: song.getElementsByClassName("name_song")[0].innerHTML,
                     artist: song.getElementsByClassName("name_singer")[0].innerHTML,
                     charting: {
@@ -41,6 +42,33 @@ module.exports = {
                 timeout: 3000000
             });
             console.log("page 2 loaded!");
+            songsArray += await page.evaluate(()=>{
+                let index2 = 100;
+                let songs = document.getElementById("list-item").getElementsByTagName("LI");
+                songs = [...songs];
+                let results = songs.map(song => ({
+                    
+                    id: index2++,
+                    title: song.getElementsByClassName("fn-name fn-link _trackLink")[0].innerHTML,
+                    "artist\(s\)": song.getElementsByClassName("sub-title")[0].getElementsByTagName("A").map(artist => ({
+                        name: artist.innerHTML
+                    })),
+                    charting: {
+                        direction: (() => {
+                            let text = song.getElementsByClassName("label-rank-status")[0].getElementsByTagName("SPAN")[0].classList[1];
+                            if (text.includes("up"))
+                                text = "upchart";
+                            else if (text.includes("down"))
+                                text = "downchart"
+                            else text = "nonechart";
+                            return text;
+                        })(),
+                        position_shifted: song.getElementsByClassName("label-rank-status")[0].innerText
+                    },
+                    url: song.getElementsByClassName("_trackLink")[0].href
+                }));
+                return results;
+            })
 
 
 

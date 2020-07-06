@@ -14,6 +14,22 @@ app.get("/", (req,res)=>{
     res.sendFile(path.join(__dirname, "/index.html"));
 });
 
+app.get("/api/list", (req, res) =>{
+    res.json([{
+        link: "/api/songs",
+        usage: "Get all songs",
+    },
+    {
+        link: "/api/songs/:name",
+        usage: "Get all songs containing \"NAME\""
+    }
+])
+});
+
+app.get("/api", (req, res)=>{
+    res.redirect("/api/list");
+})
+
 app.get("/api/songs", (req, res) =>{
     scraper.songsGetAll().then(results => res.json(results))
     .catch(error => console.log(error));
