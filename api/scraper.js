@@ -4,6 +4,7 @@ var songsArray;
 
 
 
+
 module.exports = {
     initialize: () =>{
         (async()=>{
@@ -26,7 +27,14 @@ module.exports = {
                 let results = songs.map(song => ({
                     id: index1++,
                     title: song.getElementsByClassName("name_song")[0].innerHTML,
-                    artist: song.getElementsByClassName("name_singer")[0].innerHTML,
+                    artist_list: (() =>{
+                        let artists = [];
+                        artistList = Array.from(song.getElementsByClassName("name_singer"));
+                        for (var j = 0; j < artistList.length; ++j){
+                            artists.push(artistList[j].innerHTML);
+                        };
+                        return artists;
+                    })(),
                     charting: {
                         direction: song.getElementsByClassName("chart_lw")[0].classList[1],
                         positions_shifted: song.getElementsByClassName("chart_lw")[0].getElementsByTagName("P")[0].innerHTML
@@ -38,43 +46,65 @@ module.exports = {
 
             //Zing MP3
             const page2 = await browser.newPage();
+            //await page2.on('console', consoleObj => console.log(consoleObj.text()));
             await page2.goto(`https://mp3.zing.vn/zing-chart/bai-hat.html`, {
                 timeout: 3000000
             });
             console.log("page 2 loaded!");
-            songsArray += await page.evaluate(()=>{
+            
+            
+            //let debugMessage = [];
+            songsArray = songsArray.concat(await page2.evaluate(()=>{
                 let index2 = 100;
-                let songs = document.getElementById("list-item").getElementsByTagName("LI");
+                let songs = document.getElementById("list-item").querySelectorAll("li.fn-item");
+                //console.log(songs);
                 songs = [...songs];
+                
+                //console.log(songs);
                 let results = songs.map(song => ({
                     
                     id: index2++,
-                    title: song.getElementsByClassName("fn-name fn-link _trackLink")[0].innerHTML,
-                    "artist\(s\)": song.getElementsByClassName("sub-title")[0].getElementsByTagName("A").map(artist => ({
-                        name: artist.innerHTML
-                    })),
+                    title: song.getElementsByClassName("fn-name fn-link _trackLink")[0].innerHTML.trim(),
+                    artist_list: (() =>{
+                            let artistList = song.getElementsByClassName("sub-title")[0].getElementsByTagName("A");
+                            artistList = [...artistList];
+                            let artists = [];
+                            for (var j = 0; j < artistList.length; ++j){
+                                artists.push(artistList[j].innerHTML);
+                            }
+                            return artists;
+                    })(),
                     charting: {
                         direction: (() => {
-                            let text = song.getElementsByClassName("label-rank-status")[0].getElementsByTagName("SPAN")[0].classList[1];
-                            if (text.includes("up"))
-                                text = "upchart";
-                            else if (text.includes("down"))
-                                text = "downchart"
-                            else text = "nonechart";
+                            let text = song.getElementsByClassName("label-rank-status")[0];
+                            if (text == null){
+                                text = "";
+                            }
+                            else{
+                                text = text.getElementsByTagName("SPAN")[0].classList[1];
+                                if (text.includes("up"))
+                                    text = "upchart";
+                                else if (text.includes("down"))
+                                    text = "downchart"
+                                else text = "nonechart";
+                            }
                             return text;
                         })(),
-                        position_shifted: song.getElementsByClassName("label-rank-status")[0].innerText
+                        positions_shifted: song.getElementsByClassName("label-rank-status")[0].innerText
                     },
                     url: song.getElementsByClassName("_trackLink")[0].href
-                }));
+            }));
                 return results;
-            })
-
+            }));
+            //console.log(songsArray2);
+            //songsArray.concat(songsArray2);
+            //console.log("merge!");
 
 
         }catch(err){
             console.log(err);
         }finally{
+            //console.log(debugMessage);
             console.log(songsArray);
             await browser.close();
         }
